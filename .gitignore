@@ -1,5 +1,17 @@
+# Python
 venv/
 __pycache__/
 *.pyc
+
+# Env
 .env
-.vscode/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.db
