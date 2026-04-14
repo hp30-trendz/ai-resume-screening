@@ -3,6 +3,7 @@ import os
 from fastapi import APIRouter, UploadFile, File, Form, status, HTTPException
 from app.db.database import SessionLocal
 from app.db.models import Evaluation
+from app.workers.tasks import process_resume
 
 router = APIRouter()
 
@@ -18,25 +19,31 @@ async def upload_resume(
     evaluation_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, f"{evaluation_id}.pdf")
 
-    # Save file
+    # 1. Save file to storage
     with open(file_path, "wb") as f:
         content = await file.read()
         f.write(content)
 
-    # Save to DB
+    # 2. Prepare Database Record
     db = SessionLocal()
-
-    evaluation = Evaluation(
-        id=evaluation_id,
-        job_description=job_description,
-        file_path=file_path,
-        status="pending"
-    )
-
-    db.add(evaluation)
-    db.commit()
-    db.refresh(evaluation)
-    db.close()
+    try:
+        evaluation = Evaluation(
+            id=evaluation_id,
+            job_description=job_description,
+            file_path=file_path,
+            status="pending"
+        )
+        db.add(evaluation)
+        db.commit() # Commit first to ensure data exists for the worker
+        
+        # 3. Trigger Task AFTER successful commit
+        process_resume.delay(evaluation_id)
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        db.close()
 
     return {
         "evaluation_id": evaluation_id,
@@ -46,9 +53,7 @@ async def upload_resume(
 @router.get("/result/{evaluation_id}")
 def get_result(evaluation_id: str):
     db = SessionLocal()
-
     evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
-
     db.close()
 
     if not evaluation:
