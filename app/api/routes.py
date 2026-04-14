@@ -1,6 +1,8 @@
 import uuid
 import os
 from fastapi import APIRouter, UploadFile, File, Form, status
+from app.db.database import SessionLocal
+from app.db.models import Evaluation
 
 router = APIRouter()
 
@@ -11,15 +13,29 @@ async def upload_resume(
     file: UploadFile = File(...),
     job_description: str = Form(...)
 ):
-    evaluation_id = str(uuid.uuid4())
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-    # Create file path
+    evaluation_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, f"{evaluation_id}.pdf")
 
     # Save file
     with open(file_path, "wb") as f:
         content = await file.read()
         f.write(content)
+
+    # Save to DB
+    db = SessionLocal()
+
+    evaluation = Evaluation(
+        id=evaluation_id,
+        job_description=job_description,
+        file_path=file_path,
+        status="pending"
+    )
+
+    db.add(evaluation)
+    db.commit()
+    db.close()
 
     return {
         "evaluation_id": evaluation_id,
