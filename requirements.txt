@@ -8,3 +8,4 @@ redis
 openai
 pymupdf
 python-dotenv
+requests
