@@ -137,4 +137,4 @@ Key techniques used:
 
 ## 👨‍💻 Author
 
-Harsh Patil
+Harshvardhan Patil
