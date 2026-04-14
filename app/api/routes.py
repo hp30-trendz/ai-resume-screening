@@ -1,6 +1,6 @@
 import uuid
 import os
-from fastapi import APIRouter, UploadFile, File, Form, status
+from fastapi import APIRouter, UploadFile, File, Form, status, HTTPException
 from app.db.database import SessionLocal
 from app.db.models import Evaluation
 
@@ -35,9 +35,30 @@ async def upload_resume(
 
     db.add(evaluation)
     db.commit()
+    db.refresh(evaluation)
     db.close()
 
     return {
         "evaluation_id": evaluation_id,
         "status": "processing"
+    }
+
+@router.get("/result/{evaluation_id}")
+def get_result(evaluation_id: str):
+    db = SessionLocal()
+
+    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
+
+    db.close()
+
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+
+    return {
+        "evaluation_id": evaluation.id,
+        "status": evaluation.status,
+        "score": evaluation.score,
+        "verdict": evaluation.verdict,
+        "missing_requirements": evaluation.missing_requirements,
+        "justification": evaluation.justification
     }
