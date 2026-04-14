@@ -91,6 +91,22 @@ http://localhost:8000/docs
 4. Fetch result via `/result/{evaluation_id}`
 
 ---
+---
+ ## API Example Response
+ {
+  "evaluation_id": "066d5ebd-5883-4a86-b2d4-e4a73867d086",
+  "status": "completed",
+  "score": 82,
+  "verdict": "Strong Fit",
+  "missing_requirements": "['Oracle Cloud Infrastructure (OCI) experience', 'Ansible or Terraform experience', 'Oracle Database Administration Professional (OCP) certification']",
+  "justification": "Candidate has extensive experience in Oracle DBA, strong analytical skills, and good problem-solving skills. However, lacks experience in Oracle Cloud Infrastructure and automation tools like Ansible or Terraform."
+}
+---
+---
+## Run Tests
+
+pytest tests/test_integration.py
+---
 
 ## 🧠 Prompt Engineering
 
